@@ -1,6 +1,7 @@
 # 🔐 SecureDMS — Secure Document Management System
 
-> **Smart India Hackathon 2024 | Problem Statement: SIH-190**  
+> **Smart India Hackathon 2026 | Problem Statement: SIH-190**  
+> **Team: ByteForce** 🔥  
 > A blockchain-backed, encrypted document management system for Police & Government departments.
 
 ---
@@ -146,12 +147,12 @@ SIH-190/
 
 ---
 
-## 👥 Team
+## 👥 Team — ByteForce 🔥
 
-**SIH-190 Team** — Smart India Hackathon 2024
+**Smart India Hackathon 2026**
 
 ---
 
 ## 📄 License
 
-This project is built for Smart India Hackathon 2024.
+This project is built for Smart India Hackathon 2026.

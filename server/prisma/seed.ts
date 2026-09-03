@@ -35,7 +35,7 @@ async function main() {
 
   const cases = [
     {
-      caseNumber: 'CS-2024-0001',
+      caseNumber: 'CS-2026-0001',
       title: 'Robbery at 5th Ave',
       description: 'Armed robbery reported at 5th Avenue convenience store.',
       type: 'FIR',
@@ -45,7 +45,7 @@ async function main() {
       location: '5th Avenue, Downtown',
     },
     {
-      caseNumber: 'CS-2024-0002',
+      caseNumber: 'CS-2026-0002',
       title: 'Cyber Fraud Investigation',
       description: 'Large scale phishing attack targeting government employees.',
       type: 'INVESTIGATION',
@@ -55,7 +55,7 @@ async function main() {
       location: 'Online',
     },
     {
-      caseNumber: 'CS-2024-0003',
+      caseNumber: 'CS-2026-0003',
       title: 'State vs Doe',
       description: 'Criminal trial for John Doe in connection with the 2023 fraud case.',
       type: 'COURT',
@@ -65,7 +65,7 @@ async function main() {
       location: 'District Court, Room 12',
     },
     {
-      caseNumber: 'CS-2024-0004',
+      caseNumber: 'CS-2026-0004',
       title: 'Missing Person – Jane Smith',
       description: 'Missing person report filed by family members.',
       type: 'FIR',
