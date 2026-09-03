@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  password     String
+  role         String    // Role: SUPER_ADMIN | ADMIN | INVESTIGATOR | OFFICER | LEGAL_COUNSEL | AUDITOR
+  department   String?
+  badgeNumber  String?
+  isActive     Boolean   @default(true)
+  mfaEnabled   Boolean   @default(false)
+  mfaSecret    String?
+  refreshToken String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  createdCases  Case[]         @relation("CreatedCases")
+  assignedCases Case[]         @relation("AssignedCases")
+  documents     Document[]
+  comments      Comment[]
+  notifications Notification[]
+  refreshTokens RefreshToken[]
+}
+
+model Case {
+  id           String    @id @default(cuid())
+  caseNumber   String    @unique
+  title        String
+  description  String?
+  type         String    // CaseType: FIR | INVESTIGATION | COURT | CIVIL | CRIMINAL
+  status       String    // CaseStatus: OPEN | UNDER_INVESTIGATION | PENDING_COURT | CLOSED | ARCHIVED
+  priority     String    // Priority: LOW | MEDIUM | HIGH | CRITICAL
+  createdById  String
+  assignedToId String?
+  departmentId String?
+  location     String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  closedAt     DateTime?
+
+  createdBy  User       @relation("CreatedCases", fields: [createdById], references: [id])
+  assignedTo User?      @relation("AssignedCases", fields: [assignedToId], references: [id])
+  documents  Document[]
+}
+
+model Document {
+  id           String    @id @default(cuid())
+  title        String
+  description  String?
+  fileType     String
+  fileName     String
+  filePath     String
+  fileSize     Int
+  mimeType     String
+  checksum     String
+  encryptedKey String
+  iv           String
+  tags         String?
+  caseId       String
+  uploadedById String
+  version      Int       @default(1)
+  isLatest     Boolean   @default(true)
+  parentId     String?
+  isSigned     Boolean   @default(false)
+  signedById   String?
+  signedAt     DateTime?
+  isRedacted   Boolean   @default(false)
+  accessLevel  String    // AccessLevel: PUBLIC | RESTRICTED | CONFIDENTIAL | TOP_SECRET
+
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  case       Case        @relation(fields: [caseId], references: [id])
+  uploadedBy User        @relation(fields: [uploadedById], references: [id])
+  parent     Document?   @relation("DocumentVersions", fields: [parentId], references: [id])
+  versions   Document[]  @relation("DocumentVersions")
+  signatures Signature[]
+  comments   Comment[]
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  action       String
+  entityType   String
+  entityId     String
+  userId       String
+  userName     String
+  userRole     String
+  details      String   // JSON string
+  ipAddress    String?
+  userAgent    String?
+  blockHash    String
+  previousHash String
+  blockIndex   Int
+  createdAt    DateTime @default(now())
+}
+
+model Signature {
+  id         String   @id @default(cuid())
+  documentId String
+  signedById String
+  publicKey  String
+  signature  String
+  algorithm  String
+  isValid    Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id])
+}
+
+model Comment {
+  id         String   @id @default(cuid())
+  content    String
+  documentId String
+  authorId   String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  document Document @relation(fields: [documentId], references: [id])
+  author   User     @relation(fields: [authorId], references: [id])
+}
+
+model Notification {
+  id         String   @id @default(cuid())
+  userId     String
+  title      String
+  message    String
+  type       String   // NotifType: INFO | WARNING | SUCCESS | ERROR
+  isRead     Boolean  @default(false)
+  entityType String?
+  entityId   String?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
