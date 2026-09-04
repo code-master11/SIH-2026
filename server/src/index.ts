@@ -4,11 +4,23 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
+import fs from 'fs';
+import path from 'path';
 import { config } from './config';
 import { globalLimiter } from './middleware/rateLimit.middleware';
 import { initSocket } from './socket/socket.handler';
 import { errorResponse } from './utils/api-response';
 import logger from './lib/logger';
+
+// ─── Ensure required directories exist on startup ─────────────────────────────
+const ensureDir = (dir: string) => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+    logger.info(`Created directory: ${dir}`);
+  }
+};
+ensureDir(path.resolve(config.UPLOAD_DIR as string));
+ensureDir(path.resolve('./temp'));
 
 // Routes
 import authRoutes from './routes/auth.routes';

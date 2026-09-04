@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
+import { auditService } from '../src/services/blockchain/audit.service';
 
 const prisma = new PrismaClient();
 
@@ -8,12 +8,12 @@ async function main() {
   const passwordHash = await bcrypt.hash('Password@123', 10);
 
   const users = [
-    { name: 'Super Admin',     email: 'super@dms.com',        role: 'SUPER_ADMIN',  password: passwordHash, department: 'IT',              badgeNumber: 'SA-001' },
-    { name: 'Admin User',      email: 'admin@dms.com',         role: 'ADMIN',        password: passwordHash, department: 'HQ',              badgeNumber: 'AD-001' },
-    { name: 'Investigator One',email: 'investigator@dms.com',  role: 'INVESTIGATOR', password: passwordHash, department: 'Investigations',   badgeNumber: 'IN-001' },
-    { name: 'Officer John',    email: 'officer@dms.com',       role: 'OFFICER',      password: passwordHash, department: 'Patrol',          badgeNumber: 'OF-001' },
-    { name: 'Legal Counsel',   email: 'legal@dms.com',         role: 'LEGAL_COUNSEL',password: passwordHash, department: 'Legal',           badgeNumber: 'LC-001' },
-    { name: 'Auditor Jane',    email: 'auditor@dms.com',       role: 'AUDITOR',      password: passwordHash, department: 'Audit',           badgeNumber: 'AU-001' },
+    { name: 'Super Admin',      email: 'super@dms.com',           role: 'SUPER_ADMIN',   password: passwordHash, department: 'IT',            badgeNumber: 'SA-001' },
+    { name: 'Admin User',       email: 'admin@dms.com',           role: 'ADMIN',         password: passwordHash, department: 'HQ',            badgeNumber: 'AD-001' },
+    { name: 'Investigator One', email: 'investigator@dms.com',    role: 'INVESTIGATOR',  password: passwordHash, department: 'Investigations', badgeNumber: 'IN-001' },
+    { name: 'Officer John',     email: 'officer@dms.com',         role: 'OFFICER',       password: passwordHash, department: 'Patrol',        badgeNumber: 'OF-001' },
+    { name: 'Legal Counsel',    email: 'legal@dms.com',           role: 'LEGAL_COUNSEL', password: passwordHash, department: 'Legal',         badgeNumber: 'LC-001' },
+    { name: 'Auditor Jane',     email: 'auditor@dms.com',         role: 'AUDITOR',       password: passwordHash, department: 'Audit',         badgeNumber: 'AU-001' },
   ];
 
   for (const u of users) {
@@ -57,7 +57,7 @@ async function main() {
     {
       caseNumber: 'CS-2026-0003',
       title: 'State vs Doe',
-      description: 'Criminal trial for John Doe in connection with the 2023 fraud case.',
+      description: 'Criminal trial for John Doe.',
       type: 'COURT',
       status: 'PENDING_COURT',
       priority: 'MEDIUM',
@@ -77,70 +77,30 @@ async function main() {
   ];
 
   for (const c of cases) {
-    await prisma.case.upsert({
-      where: { caseNumber: c.caseNumber },
-      update: {},
-      create: c,
-    });
-  }
-
-  const createdCases = await prisma.case.findMany();
-
-  if (createdCases.length > 0) {
-    const checksum = crypto.createHash('sha256').update('dummy-seed-content').digest('hex');
-
-    await prisma.document.create({
-      data: {
-        title: 'Initial Incident Report',
-        description: 'First information report for robbery case.',
-        fileType: 'pdf',
-        fileName: 'report.pdf',
-        filePath: 'encrypted/seed/report.pdf',
-        fileSize: 102400,
-        mimeType: 'application/pdf',
-        checksum,
-        encryptedKey: 'seed-encrypted-key',
-        iv: 'seed-iv-value-16b',
-        caseId: createdCases[0].id,
-        uploadedById: officer.id,
-        accessLevel: 'RESTRICTED',
-      },
-    });
-
-    // Seed an audit log entry using proper blockchain hash
-    const blockData = {
-      blockIndex: 1,
-      action: 'CREATE_CASE',
-      entityId: createdCases[0].id,
-      userId: officer.id,
-      previousHash: '0'.repeat(64),
-      details: JSON.stringify({ caseNumber: createdCases[0].caseNumber }),
-    };
-    const blockHash = crypto.createHash('sha256').update(JSON.stringify(blockData)).digest('hex');
-
-    await prisma.auditLog.create({
-      data: {
+    const exists = await prisma.case.findUnique({ where: { caseNumber: c.caseNumber } });
+    if (!exists) {
+      const newCase = await prisma.case.create({ data: c });
+      // Use auditService so hash chain is always valid
+      await auditService.log({
         action: 'CREATE_CASE',
         entityType: 'CASE',
-        entityId: createdCases[0].id,
+        entityId: newCase.id,
         userId: officer.id,
         userName: officer.name,
         userRole: officer.role,
-        details: JSON.stringify({ caseNumber: createdCases[0].caseNumber }),
-        blockHash,
-        previousHash: '0'.repeat(64),
-        blockIndex: 1,
-      },
-    });
+        details: { caseNumber: newCase.caseNumber, title: newCase.title },
+        ipAddress: '127.0.0.1',
+      });
+    }
   }
 
   console.log('✅ Seed completed successfully!');
   console.log('\nTest accounts (all use password: Password@123):');
-  console.log('  super@dms.com    → SUPER_ADMIN');
-  console.log('  admin@dms.com    → ADMIN');
-  console.log('  investigator@dms.com → INVESTIGATOR');
-  console.log('  officer@dms.com  → OFFICER');
-  console.log('  auditor@dms.com  → AUDITOR');
+  console.log('  super@dms.com          → SUPER_ADMIN');
+  console.log('  admin@dms.com          → ADMIN');
+  console.log('  investigator@dms.com   → INVESTIGATOR');
+  console.log('  officer@dms.com        → OFFICER');
+  console.log('  auditor@dms.com        → AUDITOR');
 }
 
 main()
